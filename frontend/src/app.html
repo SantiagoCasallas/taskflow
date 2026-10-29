@@ -1,0 +1,110 @@
+<div class="shell">
+<header>
+<a class="brand" href="/">▦ <strong>taskflow</strong>
+</a>
+<span class="edition">DEMO COMPARTIDA / V1</span>
+<span class="avatar">TF</span>
+</header>
+<main>
+<div class="intro">
+<div>
+<p class="eyebrow">UN POCO DE ORDEN, MÁS ESPACIO PARA CREAR</p>
+<h1>Haz espacio para<br>lo que <em>importa.</em>
+</h1>
+<p class="muted">Organiza tus ideas. Avanza una tarea a la vez.</p>
+</div>
+<button class="primary" (click)="open()">＋ Nueva tarea</button>
+</div>
+<section class="workspace" aria-label="Gestión de tareas">
+<div class="section-title">
+<h2>Mis tareas <span>{{data()?.totalElements ?? '—'}}</span>
+</h2>
+<span class="muted">Tu próximo paso empieza aquí</span>
+</div>
+<div class="filters">
+<label class="search">Buscar<input aria-label="Buscar tareas" placeholder="Buscar por título o descripción…" [(ngModel)]="search" (ngModelChange)="refresh(true)">
+</label>
+<label>Estado<select [(ngModel)]="status" (ngModelChange)="refresh(true)">
+<option value="">Todos los estados</option>@for(s of statuses;track s){<option [value]="s">{{labels[s]}}</option>}</select>
+</label>
+<label>Categoría<select [(ngModel)]="categoryId" (ngModelChange)="refresh(true)">
+<option value="">Todas las categorías</option>@for(c of categories();track c.id){<option [value]="c.id">{{c.name}}</option>}</select>
+</label>
+<label>Ordenar<select [(ngModel)]="order" (ngModelChange)="refresh(true)">
+<option value="createdAt,desc">Más recientes</option>
+<option value="createdAt,asc">Más antiguas</option>
+<option value="dueDate,asc">Vencimiento ↑</option>
+<option value="dueDate,desc">Vencimiento ↓</option>
+</select>
+</label>
+</div>
+@if(error()){<p role="alert" class="error">{{error()}} <button (click)="refresh()">Reintentar</button>
+</p>}
+@if(loading()){<p role="status" class="empty">Cargando tus tareas…</p>}
+@else if(data()){
+<div class="tasks">@for(task of data()?.content??[];track task.id){<article>
+<div class="task-main">
+<span class="status-dot" [class.completed]="task.status==='COMPLETED'">
+</span>
+<div>
+<span class="category">{{task.category.name}}</span>
+<h3>{{task.title}}</h3>
+<p class="description">{{task.description}}</p>
+<small>Creada {{task.createdAt|date:'dd/MM/yyyy'}} @if(task.dueDate){ · Vence {{task.dueDate|date:'dd/MM/yyyy'}} }</small>
+</div>
+</div>
+<div class="task-actions">
+<span class="badge" [attr.data-status]="task.status">{{labels[task.status]}}</span>
+<button (click)="open(task)" [attr.aria-label]="'Editar '+task.title">Editar</button>
+<button class="delete" (click)="remove(task)" [attr.aria-label]="'Eliminar '+task.title">Eliminar</button>
+</div>
+</article>}
+@empty{<div class="empty">
+<span class="empty-icon">✓</span>
+<h3>{{search||status||categoryId?'Sin coincidencias':'Todo empieza con una tarea'}}</h3>
+<p>{{search||status||categoryId?'Prueba con otros filtros.':'Añade tu primer pendiente y dale forma a tu día.'}}</p>
+</div>}</div>}
+<footer class="pagination">
+<label>Por página <select [(ngModel)]="size" (ngModelChange)="refresh(true)">
+<option [ngValue]="5">5</option>
+<option [ngValue]="10">10</option>
+<option [ngValue]="20">20</option>
+</select>
+</label>
+<span>Página {{page+1}} de {{data()?.totalPages||1}}</span>
+<button [disabled]="page===0||loading()" (click)="move(-1)">← Anterior</button>
+<button [disabled]="loading()||page+1 >= (data()?.totalPages||0)" (click)="move(1)">Siguiente →</button>
+</footer>
+</section>
+<p class="footnote">MENOS RUIDO. MÁS PROGRESO. <span>Hecho con Angular + Spring Boot</span>
+</p>
+</main>
+@if(formOpen){<div class="overlay">
+<section role="dialog" aria-modal="true" aria-labelledby="form-title" class="dialog">
+<div class="section-title">
+<h2 id="form-title">{{editing?'Editar tarea':'Una nueva tarea'}}</h2>
+<button aria-label="Cerrar formulario" [disabled]="saving()" (click)="formOpen=false">✕</button>
+</div>@if(error()){<p role="alert" class="error">{{error()}}</p>}<form #taskForm="ngForm" (ngSubmit)="save()">
+<label>Título<input name="title" required maxlength="120" [(ngModel)]="draft.title" placeholder="¿Qué tienes en mente?">
+</label>
+<label>Descripción<textarea name="description" maxlength="2000" [(ngModel)]="draft.description" rows="4">
+</textarea>
+</label>
+<div class="form-grid">
+<label>Estado<select name="status" [(ngModel)]="draft.status">@for(s of statuses;track s){<option [value]="s">{{labels[s]}}</option>}</select>
+</label>
+<label>Categoría<select name="category" required [(ngModel)]="draft.categoryId">
+<option [ngValue]="0" disabled>Selecciona una</option>@for(c of categories();track c.id){<option [ngValue]="c.id">{{c.name}}</option>}</select>
+</label>
+</div>
+<label>Fecha de vencimiento (opcional)<input type="date" name="dueDate" [(ngModel)]="draft.dueDate">
+</label>
+<p class="muted">El título y la categoría son obligatorios.</p>
+<div class="form-actions">
+<button type="button" [disabled]="saving()" (click)="formOpen=false">Cancelar</button>
+<button class="primary" [disabled]="taskForm.invalid||!draft.title.trim()||!draft.categoryId||saving()">{{saving()?'Guardando…':'Guardar tarea'}}</button>
+</div>
+</form>
+</section>
+</div>}
+</div>
